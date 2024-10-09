@@ -1,5 +1,6 @@
 package com.net.netrecognizer.net;
 
+import com.net.netrecognizer.ui.ProgressBar;
 import cost.Quadratic;
 import math.Matrix;
 import math.Vec;
@@ -21,21 +22,21 @@ public class ImagesTrains {
     private static final int BATCH_SIZE = 2;
     private static final String SAVE_PATH = "./src/main/resources/models/";
 
-    public static NeuralNetwork train() {
+    public static NeuralNetwork train(com.net.netrecognizer.ui.ProgressBar progressBar) {
         Map<String, File[]> trainedData = ImageUtils.getTrainData("./src/main/resources/trainData/alphabetset");
         Result result;
 
-        NeuralNetwork network = new NeuralNetwork.Builder(1156)
-                .addLayer(new Layer(38, Activation.Leaky_ReLU))
-                .addLayer(new Layer(12, Activation.Leaky_ReLU))
+        NeuralNetwork network = new NeuralNetwork.Builder(100)
+                .addLayer(new Layer(80, Activation.Leaky_ReLU))
+                .addLayer(new Layer(35, Activation.Leaky_ReLU))
                 .addLayer(new Layer(26, Activation.Softmax))
                 .initWeights(new Initializer.XavierNormal())
                 .setCostFunction(new Quadratic())
-                .setOptimizer(new GradientDescent(0.005))
+                .setOptimizer(new GradientDescent(0.01))
                 .addTitles(trainedData.keySet())
                 .create();
 
-        learn(trainedData, network);
+        learn(trainedData, network, progressBar);
 
         try {
             result = network.evaluate(new Vec(ImageUtils.convertToMatrix(trainedData.get("X")[1])));
@@ -94,7 +95,7 @@ public class ImagesTrains {
         return correct.get();
     }
 
-    private static void learn(Map<String, File[]> trainData, NeuralNetwork network) {
+    private static void learn(Map<String, File[]> trainData, NeuralNetwork network, ProgressBar progressBar) {
         boolean shoodStop = false;
         int epoch = 0;
         double errorRateOnTrainDS = -1;
@@ -106,11 +107,13 @@ public class ImagesTrains {
 
             errorRateOnTrainDS = 100 - (100.0 * correctTrainDS / trainData.values().stream().flatMap(ab -> Arrays.stream(ab).sequential())
                     .count());
-            shoodStop = 5 > errorRateOnTrainDS;
+            shoodStop = 1.5 > errorRateOnTrainDS;
             System.out.println("error: " + errorRateOnTrainDS);
+            progressBar.getProgressBar().setString("Подождите обучение сети. Ошибка: " + errorRateOnTrainDS + " %");
         }
         network.saveModelToJson(SAVE_PATH, "model" + System.currentTimeMillis());
         System.out.println("count epoch: " + epoch);
         System.out.println("error final: " + errorRateOnTrainDS);
+        progressBar.getProgressBar().setString("error final: " + errorRateOnTrainDS);
     }
 }

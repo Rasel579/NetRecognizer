@@ -17,7 +17,7 @@ import java.io.File;
 import java.util.concurrent.Executors;
 
 public class UI {
-    private static final int FRAME_WIDTH = 550;
+    private static final int FRAME_WIDTH = 620;
     private static final int FRAME_HEIGHT = 550;
     private static final Font FONT = new Font("Dialog", Font.BOLD, 18);
     private static final Font ITALIC = new Font("Dialog", Font.ITALIC, 18);
@@ -46,7 +46,7 @@ public class UI {
 
     private void createImageDetectorPanel() {
         JPanel imageFontDetector = new JPanel();
-        imageFontDetector.setBorder(BorderFactory.createTitledBorder("Распознование шрифтов"));
+        imageFontDetector.setBorder(BorderFactory.createTitledBorder("Распознавание шрифтов"));
         JButton chooseFont = new JButton("Выбрать символ");
         chooseFont.setBackground(Color.ORANGE.darker());
         chooseFont.setForeground(Color.ORANGE.darker());
@@ -54,19 +54,18 @@ public class UI {
 
         imageFontDetector.add(chooseFont);
 
-        JButton start = new JButton("Распазнать символ");
+        JButton start = new JButton("Распознать символ");
 
         start.setBackground(Color.GREEN.darker());
         start.setForeground(Color.GREEN.darker());
         start.addActionListener(e -> {
-            SwingUtilities.invokeLater(() -> progressBar.showProgressBar("Распознаю символ ..."));
-            Executors.newSingleThreadExecutor().submit(() -> {
+            Executors.newCachedThreadPool().submit(() -> {
                 try {
                     Runnable runnable = () -> {
                         try {
                             Result result = imageNetwork.evaluate(new Vec(ImageUtils.convertToMatrix(new File(selectedFile.getPath()))));
                             resultSymbollabel.setText(result.getResult(imageNetwork.getTitles()));
-                            progressBar.getProgressBar().setString("Готов");
+                            progressBar.getProgressBar().setString(result.getResult(imageNetwork.getTitles()));
                         } catch (Exception e2) {
                             System.out.println(e2.getMessage());
                             progressBar.getProgressBar().setString(e2.getMessage());
@@ -97,7 +96,7 @@ public class UI {
 
     private void createDataPanel() {
         JPanel dataIrisPanel = new JPanel();
-        dataIrisPanel.setBorder(BorderFactory.createTitledBorder("Распознование цветков Iris"));
+        dataIrisPanel.setBorder(BorderFactory.createTitledBorder("Распознавание цветков Iris"));
         JLabel pesticLabel = new JLabel("Размеры пестики");
         JTextField pesticSizeFirst = new JTextField(2);
         JTextField pesticSizeSecond = new JTextField(2);
@@ -111,19 +110,19 @@ public class UI {
         dataIrisPanel.add(tSizeFirst);
         dataIrisPanel.add(tSizeSecond);
 
-        JButton start = new JButton("Распазнать цветок");
+        JButton start = new JButton("Распознать цветок");
 
         start.setBackground(Color.GREEN.darker());
         start.setForeground(Color.GREEN.darker());
         start.addActionListener(e -> {
             progressBar.getProgressBar().setString("Распознаю цветок ...");
-            Executors.newSingleThreadExecutor().submit(() -> {
+            Executors.newCachedThreadPool().submit(() -> {
                 try {
                     Runnable runnable = () -> {
                         try {
                             Result result = irisNetwork.evaluate(new Vec(Double.parseDouble(pesticSizeFirst.getText()), Double.parseDouble(pesticSizeSecond.getText()), Double.parseDouble(tSizeFirst.getText()), Double.parseDouble(tSizeSecond.getText())));
                             resultSymbollabel.setText(result.getResult(irisNetwork.getTitles()));
-                            progressBar.getProgressBar().setString("Готово");
+                            progressBar.getProgressBar().setString(result.getResult(irisNetwork.getTitles()));
                         } catch (Exception e2) {
                             System.out.println(e2.getMessage());
                             progressBar.getProgressBar().setString(e2.getMessage());
@@ -187,11 +186,11 @@ public class UI {
     private void startLearn() {
         progressBar = new ProgressBar(mainFrame);
         SwingUtilities.invokeLater(() -> progressBar.showProgressBar("Обучаю сеть. Подождите"));
-        Executors.newSingleThreadExecutor().submit(() -> {
+        Executors.newCachedThreadPool().submit(() -> {
             try {
                 Runnable runnable = () -> {
                     try {
-                        imageNetwork = ImagesTrains.train();
+                        imageNetwork = ImagesTrains.train(progressBar);
                         irisNetwork = CSVNetTrain.train();
                         progressBar.getProgressBar().setString("Готово");
 
